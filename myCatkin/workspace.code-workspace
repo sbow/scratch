@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../realsensePose2"
+		},
+		{
+			"path": "../../../../../opt/ros/noetic/include"
+		}
+	]
+}

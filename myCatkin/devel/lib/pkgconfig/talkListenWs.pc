@@ -1,0 +1,8 @@
+prefix=/home/shaun/Git/scratch/myCatkin/devel
+
+Name: talkListenWs
+Description: Description of talkListenWs
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

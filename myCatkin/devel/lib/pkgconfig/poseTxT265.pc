@@ -1,0 +1,8 @@
+prefix=/home/shaun/Git/scratch/myCatkin/devel
+
+Name: poseTxT265
+Description: Description of poseTxT265
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
