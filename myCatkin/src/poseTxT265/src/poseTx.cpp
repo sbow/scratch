@@ -9,7 +9,9 @@
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "std_msgs/Int16.h"
 #include "geometry_msgs/Pose.h"
+#include "geometry_msgs/Twist.h"
 
 #include <sstream>
 
@@ -120,7 +122,10 @@ int main(int argc, char * argv[]) try
    * buffer up before throwing some away.
    */
   ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-  ros::Publisher rs2_t265_pub = n.advertise<geometry_msgs::Pose>("rs2_t265", 1000);
+  ros::Publisher t265_pose_pub = n.advertise<geometry_msgs::Pose>("t265_pose", 1000);
+  ros::Publisher t265_twist_pub = n.advertise<geometry_msgs::Twist>("t265_twist", 1000);
+  ros::Publisher t265_confTracker_pub = n.advertise<std_msgs::Int16>("t265_confTracker", 1000);
+  ros::Publisher t265_confMapper_pub = n.advertise<std_msgs::Int16>("t265_confMapper", 1000);
 
   ros::Rate loop_rate(10);
 
@@ -148,6 +153,7 @@ int main(int argc, char * argv[]) try
     cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
     // Start pipeline with chosen configuration
     pipe.start(cfg);
+    ROS_INFO("Intel Realsesne T265 tracking camera initialized");
   /**
    * END intel realsense init code
    */
@@ -179,7 +185,9 @@ int main(int argc, char * argv[]) try
     float avX = pose_data.angular_velocity.x; // angular velocity
     float avY = pose_data.angular_velocity.y; // angular velocity
     float avZ = pose_data.angular_velocity.z; // angular velocity
-    double qXd = qX; // implicit cast float (32bit) to double (64bit) for ros msg
+    /**< Pose confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High */
+    unsigned int confTracker = pose_data.tracker_confidence; 
+    unsigned int confMapper = pose_data.mapper_confidence;
 
     // Output some sample data to std out:
     //std::cout << "\r" << "Device rotation w: " << std::setprecision(3) << std::fixed << qW << "\n";
@@ -195,16 +203,16 @@ int main(int argc, char * argv[]) try
     std::stringstream ss;
     // Output some pose data to chatter topic
     ss << "Quaterion X: " << std::setprecision(3) << std::fixed << qX;
+    /**
+     * The publish() function is how you send messages. The parameter
+     * is the message object. The type of this object must agree with the type
+     * given as a template parameter to the advertise<>() call, as was done
+     * in the constructor above.
+     */
+    chatter_pub.publish(msg);
 
-    msg.data = ss.str();
-    ROS_INFO("%s", msg.data.c_str());
 
-    std::stringstream ss2;
-    ss2 << "Quaterio X double: " << std::setprecision(3) << std::fixed << qXd;
-    msg.data = ss2.str();
-    ROS_INFO("%s", msg.data.c_str());
-
-    /** Populate & publish geometry_msgs/Pose type message under rs2_t265 topic
+    /** Populate & publish geometry_msgs/Pose type message under t265_pose topic
      */
     geometry_msgs::Pose pose;
     pose.position.x = dX;
@@ -214,16 +222,29 @@ int main(int argc, char * argv[]) try
     pose.orientation.y = qY;
     pose.orientation.z = qZ;
     pose.orientation.w = qW;
-    rs2_t265_pub.publish(pose);
+    t265_pose_pub.publish(pose);
 
-
-    /**
-     * The publish() function is how you send messages. The parameter
-     * is the message object. The type of this object must agree with the type
-     * given as a template parameter to the advertise<>() call, as was done
-     * in the constructor above.
+    /** Populate & publish geometry_msgs/Twist type message (lin/ang vel) 
+     * under the t265_twist topic
      */
-    chatter_pub.publish(msg);
+    geometry_msgs::Twist twist;
+    twist.linear.x = vX;
+    twist.linear.y = vY;
+    twist.linear.z = vZ;
+    twist.angular.x = avX;
+    twist.angular.y = avY;
+    twist.angular.z = avZ;
+    t265_twist_pub.publish(twist);
+
+    /** Populate & publish tracking & mapping confidence measurements (0 fail, 3 max)
+     */
+    std_msgs::Int16 trackConf;
+    std_msgs::Int16 mapConf;
+    trackConf.data = confTracker;
+    mapConf.data = confMapper;
+    t265_confTracker_pub.publish(trackConf);
+    t265_confMapper_pub.publish(mapConf);
+
 
     ros::spinOnce();
 

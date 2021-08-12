@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../../../../opt/ros/noetic/include"
+		},
+		{
+			"path": "../../librealsense/include/librealsense2"
 		}
 	]
 }
