@@ -1,14 +1,17 @@
 // Shaun Bowman
-// Aug 6 2021
-// First program for Intel REalsense T265
-// Recycle of example "pose" in librealsense examples
+// 2021/08/12 - Friday
+// Remake of intel realsense example rs-pose-and-image.cpp
+// For eventual use in ROS for control of rover
+
 
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 #include <librealsense2/rs.hpp>
 #include <iostream>
 #include <iomanip>
-#include <string>
+#include <chrono>
+#include <thread>
+#include <mutex>
 #include <map>
 #include <algorithm>
 
@@ -72,10 +75,11 @@ bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& 
     }
     return false;
 }
+
 int main(int argc, char * argv[]) try
 {
     std::string serial;
-    if (!device_with_streams({ RS2_STREAM_POSE}, serial))
+    if (!device_with_streams({ RS2_STREAM_POSE }, serial))
         return EXIT_SUCCESS;
 
     // Declare RealSense pipeline, encapsulating the actual device and sensors
@@ -86,53 +90,59 @@ int main(int argc, char * argv[]) try
         cfg.enable_device(serial);
     // Add pose stream
     cfg.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
-    
-    // Shaun Bowman
-    // 2021/08/11
-    // Added rs-pose-and-image in order to get fisheye rs2_stream
-    // Adding with intention to add to RS2
+    // Enable both image streams
+    // Note: It is not currently possible to enable only one
     cfg.enable_stream(RS2_STREAM_FISHEYE, 1, RS2_FORMAT_Y8);
     cfg.enable_stream(RS2_STREAM_FISHEYE, 2, RS2_FORMAT_Y8);
 
-    // Start pipeline with chosen configuration
-    pipe.start(cfg);
+    // Define frame callback
 
-    // GET 10th frame, then continue debugging
-    auto frames = pipe.wait_for_frames();
-    auto f = frames.first_or_default(RS2_STREAM_POSE);
-    auto pose_data = f.as<rs2::pose_frame>().get_pose_data();
-    for (int cnt = 0; cnt < 9; cnt++){
-        // Wait for the next set of frames from the camera
-        frames = pipe.wait_for_frames();
-        // Get a frame from the pose stream
-        f = frames.first_or_default(RS2_STREAM_POSE);
-        // Cast the frame to pose_frame and get its data
-        pose_data = f.as<rs2::pose_frame>().get_pose_data();
+    // The callback is executed on a sensor thread and can be called simultaneously from multiple sensors
+    // Therefore any modification to common memory should be done under lock
+    std::mutex data_mutex;
+    uint64_t pose_counter = 0;
+    uint64_t frame_counter = 0;
+    bool first_data = true;
+    auto last_print = std::chrono::system_clock::now();
+    auto callback = [&](const rs2::frame& frame)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        // Only start measuring time elapsed once we have received the
+        // first piece of data
+        if (first_data) {
+            first_data = false;
+            last_print = std::chrono::system_clock::now();
+        }
+
+        if (auto fp = frame.as<rs2::pose_frame>()) {
+            pose_counter++;
+        }
+        else if (auto fs = frame.as<rs2::frameset>()) {
+            frame_counter++;
+        }
+
+        // Print the approximate pose and image rates once per second
+        auto now = std::chrono::system_clock::now();
+        if (now - last_print >= std::chrono::seconds(1)) {
+            std::cout << "\r" << std::setprecision(0) << std::fixed
+                      << "Pose rate: "  << pose_counter << " "
+                      << "Image rate: " << frame_counter << std::flush;
+            pose_counter = 0;
+            frame_counter = 0;
+            last_print = now;
+        }
+    };
+
+    // Start streaming through the callback
+    rs2::pipeline_profile profiles = pipe.start(cfg, callback);
+
+    // Sleep this thread until we are done
+    while(true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-        
-    // Get some data from the T265:
-    float dX = pose_data.translation.x;
-    float dY = pose_data.translation.y;
-    float dZ = pose_data.translation.z;
-    float qW = pose_data.rotation.w;
-    float qX = pose_data.rotation.x;
-    float qY = pose_data.rotation.y;
-    float qZ = pose_data.rotation.z;
-    float vX = pose_data.velocity.x;
-    float vY = pose_data.velocity.y;
-    float vZ = pose_data.velocity.z;
-    float avX = pose_data.angular_velocity.x; // angular velocity
-    float avY = pose_data.angular_velocity.y; // angular velocity
-    float avZ = pose_data.angular_velocity.z; // angular velocity
 
-
-    // Output data to standard out
-    std::cout << "\r" << "Device rotation w: " << std::setprecision(3) << std::fixed << qW << "\n";
-    std::cout << "\r" << "Device rotation x: " << std::setprecision(3) << std::fixed << qX << "\n";
     return EXIT_SUCCESS;
-
-} // END int main()
-
+}
 catch (const rs2::error & e)
 {
     std::cerr << "RealSense error calling " << e.get_failed_function() << "(" << e.get_failed_args() << "):\n    " << e.what() << std::endl;

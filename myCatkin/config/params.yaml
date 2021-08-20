@@ -1,0 +1,12 @@
+# MOWBOT ROS Parameters - YAML Format
+vesc_driver_node:
+  port: "/dev/ttyACM0" # Serial port of VESC, see /sys/class/tty/ttyA*
+
+_min: 0.0 # VESC driver min, duty cycle 0..1
+_max: 0.5 # VESC driver max, duty cycle 0..1
+
+speed_to_erpm_gain: 4449.0 # MOWBOT Calibration
+speed_to_erpm_offset: 0.0 # MOWBOT Calibration
+steering_angle_to_servo_gain: -0.7645 # MOWBOT Calibration
+steering_angle_to_servo_offset: 0.490 # MOWBOT Calibration
+wheelbase: 0.324 # MOWBOT Calibration

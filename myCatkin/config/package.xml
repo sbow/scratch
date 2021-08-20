@@ -1,0 +1,26 @@
+<package format="2">
+	<name>Mowbot Rover</name>
+	<version>2.0</version>
+	<description>
+	This package contains all code required
+	to run Mowbot - a F1Tenth / MIT Racecar
+	style rover robot. The robot uses:
+	ROS, Intel Realsense, Ubuntu, NVidia 
+	Jetpack, NVidia Jetson TX1, FOC BOX VESC
+	BLDC Controller, RP Lidar, NVidia Jetson 
+	Nano, Sparkfun GPS. The code is written
+	in CPP. The author is Shaun Bowman.
+	Written 2021/08/18.
+	</description>
+	<maintainer email="shaun_bowman@hotmail.com">Shaun Bowman</maintainer>
+	<license>MIT</license>
+
+	<buildtool_depend>catkin</buildtool_depend>
+	
+	<depend>roscpp</depend>
+	<depend>std_msgs</depend>
+	<depend>geometry_msgs</depend>
+	<depend>ackermann_msgs</depend>
+	<depend>realsense2</depend>
+
+</package>

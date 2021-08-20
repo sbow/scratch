@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../../librealsense/include/librealsense2"
+		},
+		{
+			"path": "../../librealsense/examples"
 		}
 	]
 }
