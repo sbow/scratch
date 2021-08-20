@@ -1,0 +1,6 @@
+[submodule "myCatkin/src/serial"]
+	path = myCatkin/src/serial
+	url = https://github.com/wjwwood/serial.git
+[submodule "myCatkin/src/vesc"]
+	path = myCatkin/src/vesc
+	url = https://github.com/mit-racecar/vesc
