@@ -1,4 +1,16 @@
 # MOWBOT ROS Parameters - YAML Format
+#
+# Axis orientation: Z up, X fwd, Y left
+# Ego (rover) origin: centre of mass 
+#
+# Hardware highlights:
+#   Tracking camera, Intel Realsense T265
+#   Compute, NVidia Jetson Tx1
+#   Lidar, A2 Lidar 
+#   Motor, TRAXXAS Velinion 3500
+#   Chassis, TRAXXAS Slash 4x4
+
+# VESC Motor controller parameters
 vesc_driver_node:
   port: "/dev/ttyACM0" # Serial port of VESC, see /sys/class/tty/ttyA*
 
@@ -7,6 +19,71 @@ _max: 0.5 # VESC driver max, duty cycle 0..1
 
 speed_to_erpm_gain: 4449.0 # MOWBOT Calibration
 speed_to_erpm_offset: 0.0 # MOWBOT Calibration
+
+kv: 3500 # rpm/v, Traxxas Velinion 3500 BLDC
+
+# SERVO Steering parameters
 steering_angle_to_servo_gain: -0.7645 # MOWBOT Calibration
 steering_angle_to_servo_offset: 0.490 # MOWBOT Calibration
-wheelbase: 0.324 # MOWBOT Calibration
+
+# MOWBOT Rover parameters
+l_wheelbase: 0.324 # m,  MOWBOT Calibration
+l_track: 0.18 # m, 
+m_rover: 7.1 # kg, 
+I_inertia_z: 69.0 # m^4, 
+r_driveratio: 11.82 # unitless, overall reduction motor to wheels
+k_spinloss: 0.001 # Nm/rpm_axle, drivetrain losses
+l_wheel: 0.109 # m, tire diameter
+l_dist_per_rev: 0.342 # m, meters per revolution
+r_meter_per_tachtick: 0.00225 # m, meters per tach tick of drive motor
+
+
+# TRACKING Camera parameters, intel T265
+track_dx: 0.10 # m, motor offset from rover origin
+track_dy: 0.0 # m, motor offset from rover origin
+track_dz: 0.10 # m, motor offset from roer origin
+track_fov: 163 # deg, camera field of view
+track_resx: 848 # pixels, x
+track_resy: 800 # pixels, y
+track_binocsep: 0.064 # m, separation between imagers
+track_rotation_x: -90 # deg, camera to rover
+track_rotation_z: 180 # deg, camera to rover
+track_rotation_y: 180 #deg, camera to rover
+track_transform_x: [0.0, 0.0, -1.0] # transform x,y,z, realsense to rover coord
+track_transform_y: [-1.0, 0.0, 0.0] # transform x,y,z, realsense to rover coord
+track_transform_z: [0.0, 1.0, 0.0] # transform x,y,z, realsense to rover coord
+
+# LIDAR Camera parameters, A2 Lidar
+lidar_port: "/dev/ttyUSB0"
+lidar_baud: "115200"
+lidar_dx: 0.15 # m, lidar offset from rover origin
+lidar_dy: 0.00 # m, lidar offset from rover origin
+lidar_dz: 0.05 # m, lidar offset from rover origin
+
+# GAMEPAD Teleoperation parameters, Logitech F710 
+#    Help utility: 
+#      sudo apt-get install jstest-gtk
+#      jstest /dev/input/js1 (your port may vary)
+#    
+#    below button asignment given selector switch on gamepad set to "D" (not "X")
+#    biggest difference with "X" mode - lt & rt become progressive, not on/off buttons
+#    
+#    button  description
+#    0       x,blue
+#    1       a,green
+#    2       b,red
+#    3       y,yellow
+#    4       lb
+#    5       rb
+#    6       lt
+#    7       rt
+#    8       back
+#    9       start
+#    
+#    axes    description
+#    0       directional pad -32767 L, 32767 R
+#    1       directional pad -32767 U, 32767 D
+#    2       right joystick -32767 L, 32767 R
+#    3       right joystick -32767 U, 32767 D
+#    4       left joystick -32767 L, 32767 R
+#    5       left joystick -32767 U, 32767 D

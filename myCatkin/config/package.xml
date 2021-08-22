@@ -22,5 +22,6 @@
 	<depend>geometry_msgs</depend>
 	<depend>ackermann_msgs</depend>
 	<depend>realsense2</depend>
+	<depend>joy</depend>
 
 </package>

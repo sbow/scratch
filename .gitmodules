@@ -4,3 +4,6 @@
 [submodule "myCatkin/src/vesc"]
 	path = myCatkin/src/vesc
 	url = https://github.com/mit-racecar/vesc
+[submodule "myCatkin/src/joystick_drivers"]
+	path = myCatkin/src/joystick_drivers
+	url = https://github.com/ros-drivers/joystick_drivers
