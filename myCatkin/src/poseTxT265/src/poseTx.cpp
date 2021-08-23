@@ -21,6 +21,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <vector>
 
 // Find devices with specified streams
 bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& out_serial)
@@ -105,6 +106,27 @@ int main(int argc, char * argv[]) try
   ros::NodeHandle n;
 
   /**
+   * Get parameter from parameter server. In this case, vector transform to 
+   * go from Intel Realsense coordinate system - to standard AV coordinate system:
+   * Z Up, X forward, Y left
+   */
+  std::vector<float> x_trans;
+  std::vector<float> y_trans;
+  std::vector<float> z_trans;
+  n.param("track_transform_x", x_trans, x_trans);
+  n.param("track_transform_y", y_trans, y_trans);
+  n.param("track_transform_z", z_trans, z_trans);
+  if (x_trans.size() < 3 && y_trans.size() < 3 || z_trans.size() < 3)
+  {
+    ROS_INFO("ERROR: Did not load parameter(s) track_transform_x/y/z {0.0,0.0,0.0}");
+    return EXIT_SUCCESS;
+  }
+  // for (auto i: x_trans)
+  // {
+  //     ROS_INFO_STREAM("My val: " << i);
+  // }
+
+  /**
    * The advertise() function is how you tell ROS that you want to
    * publish on a given topic name. This invokes a call to the ROS
    * master node, which keeps a registry of who is publishing and who
@@ -172,19 +194,34 @@ int main(int argc, char * argv[]) try
     auto pose_data = f.as<rs2::pose_frame>().get_pose_data();
     
     // Get some data from the T265:
-    float dX = pose_data.translation.x;
-    float dY = pose_data.translation.y;
-    float dZ = pose_data.translation.z;
+    float dX_temp = pose_data.translation.x;
+    float dY_temp = pose_data.translation.y;
+    float dZ_temp = pose_data.translation.z;
     float qW = pose_data.rotation.w;
-    float qX = pose_data.rotation.x;
-    float qY = pose_data.rotation.y;
-    float qZ = pose_data.rotation.z;
-    float vX = pose_data.velocity.x;
-    float vY = pose_data.velocity.y;
-    float vZ = pose_data.velocity.z;
-    float avX = pose_data.angular_velocity.x; // angular velocity
-    float avY = pose_data.angular_velocity.y; // angular velocity
-    float avZ = pose_data.angular_velocity.z; // angular velocity
+    float qX_temp = pose_data.rotation.x;
+    float qY_temp = pose_data.rotation.y;
+    float qZ_temp = pose_data.rotation.z;
+    float vX_temp = pose_data.velocity.x;
+    float vY_temp = pose_data.velocity.y;
+    float vZ_temp = pose_data.velocity.z;
+    float avX_temp = pose_data.angular_velocity.x; // angular velocity
+    float avY_temp = pose_data.angular_velocity.y; // angular velocity
+    float avZ_temp = pose_data.angular_velocity.z; // angular velocity
+
+    // Transform coordinates from T265 to Rover:
+    float dX = x_trans[0]*dX_temp + x_trans[1]*dY_temp + x_trans[2]*dZ_temp;
+    float dY = y_trans[0]*dX_temp + y_trans[1]*dY_temp + y_trans[2]*dZ_temp;
+    float dZ = z_trans[0]*dX_temp + z_trans[1]*dY_temp + z_trans[2]*dZ_temp;
+    float qX = x_trans[0]*qX_temp + x_trans[1]*qY_temp + x_trans[2]*qZ_temp;
+    float qY = y_trans[0]*qX_temp + y_trans[1]*qY_temp + y_trans[2]*qZ_temp;
+    float qZ = z_trans[0]*qX_temp + z_trans[1]*qY_temp + z_trans[2]*qZ_temp;
+    float vX = x_trans[0]*vX_temp + x_trans[1]*vY_temp + x_trans[2]*vZ_temp;
+    float vY = y_trans[0]*vX_temp + y_trans[1]*vY_temp + y_trans[2]*vZ_temp;
+    float vZ = z_trans[0]*vX_temp + z_trans[1]*vY_temp + z_trans[2]*vZ_temp;
+    float avX = x_trans[0]*avX_temp + x_trans[1]*avY_temp + x_trans[2]*avZ_temp;
+    float avY = y_trans[0]*avX_temp + y_trans[1]*avY_temp + y_trans[2]*avZ_temp;
+    float avZ = z_trans[0]*avX_temp + z_trans[1]*avY_temp + z_trans[2]*avZ_temp;
+
     /**< Pose confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High */
     unsigned int confTracker = pose_data.tracker_confidence; 
     unsigned int confMapper = pose_data.mapper_confidence;

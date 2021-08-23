@@ -14,6 +14,8 @@
 #include <mutex>
 #include <map>
 #include <algorithm>
+#include <vector>
+#include <array>
 
 // Find devices with specified streams
 bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& out_serial)
@@ -78,6 +80,17 @@ bool device_with_streams(std::vector <rs2_stream> stream_requests, std::string& 
 
 int main(int argc, char * argv[]) try
 {
+    float myFloat[4] = {1.0,2.0,3.0,4.0};
+    std::vector<float> myVec;
+    std::vector<float> myEmptyVec;
+    std::vector<float>::iterator myVecIt;
+    myVecIt = myVec.begin();
+    for (int ix = 0; ix < 4; ix++)
+    {
+        myVec.push_back(myFloat[ix]);
+    }
+    
+
     std::string serial;
     if (!device_with_streams({ RS2_STREAM_POSE }, serial))
         return EXIT_SUCCESS;
