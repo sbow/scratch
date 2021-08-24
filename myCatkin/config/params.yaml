@@ -80,10 +80,45 @@ lidar_dz: 0.05 # m, lidar offset from rover origin
 #    8       back
 #    9       start
 #    
-#    axes    description
-#    0       directional pad -32767 L, 32767 R
-#    1       directional pad -32767 U, 32767 D
-#    2       right joystick -32767 L, 32767 R
-#    3       right joystick -32767 U, 32767 D
-#    4       left joystick -32767 L, 32767 R
-#    5       left joystick -32767 U, 32767 D
+#    base axes:             joy_node axes:  description:
+#    0_ -32767 L, 32767 R   4_ 1 L, -1 R    directional pad
+#    1_ -32767 U, 32767 D   5_ 1 U, -1 D    directional pad
+#    2_ -32767 L, 32767 R   2_ 1 L, -1 R    right joystick 
+#    3_ -32767 U, 32767 D   3_ 1 U, -1 D    right joystick 
+#    4_ -32767 L, 32767 R   0_ 1 L, -1 R    left joystick  
+#    5_ -32767 U, 32767 D   1_ 1 U, -1 D    left joystick  
+#    
+#    Node layout:
+#    joy_node    - base ROS driver interface with controller
+#                - detect button pressess / joystick positions
+#                - populate "joy" topic
+#                  - field, axis[6] float
+#                  - field, buttons[12] float
+#    teleop_logi - logic assigning button pushes to controller actions
+#                - subscribe "joy" topic
+#                - pulish "teleop_cmd" topic
+#    
+#    Logical assignment:
+#      teleop_logi node
+#      (default)       : no action mode, nothing pressed, motor commanded to zero
+#      lb              : tele_dedman_btn : teleop mode, deadman switch, when held user uses gamepad for steering / throttle
+#      left joystick   : tele_steer_ax   : teleop mode, steering L/R
+#      right joystick  : tele_throt_ax   : teleop mode, throttle U
+#      rb              : av_dedman_btn   : autonomous mode, deadman switch, must be held to avoid no action mode
+#      start           : av_start_btn    : autonomous mode, signals logic to honor av steering / throttle commands
+#      back            : av_pause_btn    : autonomous mode, signals logic to stop honoring av steering / throttle commands
+#      x,blue          : av_throtup_btn  : autonomous mode, signals logic to step up throttle command
+#      a,green         : av_throtdn_btn  : autonomous mode, signals logic to step down throttle command
+#      y,yellow        : ros_start_btn   : autonomous mode, signals logic to record ROS Bag
+#      b,red           : ros_stop_btn    : autonomous mode, signals logic to stop recording ROS Bag
+teleop_logi:
+  tele_dedman_btn: 4
+  tele_steer_ax: 0
+  tele_throt_ax: 1
+  av_dedman_btn: 5
+  av_start_btn: 9
+  av_pause_btn: 8
+  av_throtup_btn: 0
+  av_throtdn_btn: 1
+  ros_start_btn: 3
+  ros_stop_btn: 2
