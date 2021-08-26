@@ -114,7 +114,7 @@ lidar_dz: 0.05 # m, lidar offset from rover origin
 teleop_logi:
   tele_dedman_btn: 4
   tele_steer_ax: 0
-  tele_throt_ax: 1
+  tele_throt_ax: 3
   av_dedman_btn: 5
   av_start_btn: 9
   av_pause_btn: 8
@@ -122,3 +122,6 @@ teleop_logi:
   av_throtdn_btn: 1
   ros_start_btn: 3
   ros_stop_btn: 2
+  AV_THROT_NC: 0
+  AV_THROT_INC: 1
+  AV_THROT_DEC: 2
