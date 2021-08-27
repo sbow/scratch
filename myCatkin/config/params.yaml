@@ -120,8 +120,10 @@ teleop_logi:
   av_pause_btn: 8
   av_throtup_btn: 0
   av_throtdn_btn: 1
+  av_manthrot_btn: 6
   ros_start_btn: 3
   ros_stop_btn: 2
   AV_THROT_NC: 0
   AV_THROT_INC: 1
   AV_THROT_DEC: 2
+  AV_THROT_MAN: 3

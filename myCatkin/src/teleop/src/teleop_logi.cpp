@@ -17,6 +17,7 @@ int av_start_btn;
 int av_pause_btn;
 int av_throtup_btn;
 int av_throtdn_btn;
+int av_manthrot_btn;
 int ros_start_btn;
 int ros_stop_btn;
 
@@ -30,13 +31,16 @@ bool av_start_b = false;
 bool av_pause_b = false;
 bool av_throtup_b = false;
 bool av_throtdn_b = false;
+bool av_manthrot_b = false;
 bool ros_start_b = false;
 bool ros_stop_b = false;
 int enum_AV_THROT_NC;
 int enum_AV_THROT_INC;
 int enum_AV_THROT_DEC;
+int enum_AV_THROT_MAN;
 
 // Global state vars
+bool ROS_BAG_RECORD_REQ = false;
 
 // Set global vars upon publication of new Joy topic
 void joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
@@ -49,6 +53,7 @@ void joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
     av_pause_b = button[av_pause_btn] == 1;
     av_throtup_b = button[av_throtup_btn] == 1;
     av_throtdn_b = button[av_throtdn_btn] == 1;
+    av_manthrot_b = button[av_manthrot_btn] == 1;
     ros_start_b = button[ros_start_btn] == 1;
     ros_stop_b = button[ros_stop_btn] == 1;
     tele_steer_flt = axes[tele_steer_ax];
@@ -74,6 +79,7 @@ int main(int argc, char **argv)
   gotParam = gotParam && n.getParam("/teleop_logi/av_pause_btn", av_pause_btn); 
   gotParam = gotParam && n.getParam("/teleop_logi/av_throtup_btn", av_throtup_btn); 
   gotParam = gotParam && n.getParam("/teleop_logi/av_throtdn_btn", av_throtdn_btn); 
+  gotParam = gotParam && n.getParam("/teleop_logi/av_manthrot_btn", av_manthrot_btn); 
   gotParam = gotParam && n.getParam("/teleop_logi/ros_start_btn", ros_start_btn); 
   gotParam = gotParam && n.getParam("/teleop_logi/ros_stop_btn", ros_stop_btn); 
   
@@ -92,6 +98,7 @@ int main(int argc, char **argv)
   gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_NC",enum_AV_THROT_NC);
   gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_INC",enum_AV_THROT_INC);
   gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_DEC",enum_AV_THROT_DEC);
+  gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_MAN",enum_AV_THROT_MAN);
   if(not gotParam)
     ROS_FATAL("Didn't get AV_THROT_XX enum param");
 
@@ -106,6 +113,11 @@ int main(int argc, char **argv)
   std_msgs::Float32 tele_throt_req;
 
   // Publish ROS Bag record request
+  ros::Publisher pub_rosbag = n.advertise<std_msgs::Bool>("/teleop_logi/rosbag_req",5);
+  std_msgs::Bool rosbag_req;
+
+  // Announce node is running
+  ROS_INFO("teleop_logi node - RUNNING");
 
   while (ros::ok())
   {
@@ -113,11 +125,13 @@ int main(int argc, char **argv)
     human_in_loop.data = tele_dedman_b || av_dedman_b;
     pub_hil.publish(human_in_loop);
 
-    // process AV throttle request
+    // process AV throttle request's (increase, decrease, manual)
     if(av_throtup_b && av_dedman_b)
         av_throt_req.data = enum_AV_THROT_INC;
     else if(av_throtdn_b && av_dedman_b)
         av_throt_req.data = enum_AV_THROT_DEC;
+    else if(av_manthrot_b && av_dedman_b)
+        av_throt_req.data = enum_AV_THROT_MAN;
     else
         av_throt_req.data = enum_AV_THROT_NC;
     pub_avthrot.publish(av_throt_req);
@@ -130,12 +144,26 @@ int main(int argc, char **argv)
     }
     else
     {
-        tele_steer_req.data = 0.0;
-        tele_throt_req.data = 0.5;
+        tele_steer_req.data = 0.5;
+        tele_throt_req.data = 0.0;
     }
+    if(av_manthrot_b && av_dedman_b) // allows joystick override of throttle when in AV mode
+        tele_throt_req.data = tele_throt_flt;
     pub_telesteer.publish(tele_steer_req); // note: raw values 0..1; must be converted to
     pub_telethrot.publish(tele_throt_req); // physical units in axl_trq_arb
 
+    // process ros bag record request
+    if(ros_start_b)
+    {
+        rosbag_req.data = true;
+        pub_rosbag.publish(rosbag_req);
+    }
+    else if(ros_stop_b)
+    {
+        rosbag_req.data = false;
+        pub_rosbag.publish(rosbag_req);
+    }
+    
     ros::spinOnce();
     loop_rate.sleep();
   }
