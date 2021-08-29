@@ -7,7 +7,7 @@
 #   Tracking camera, Intel Realsense T265
 #   Compute, NVidia Jetson Tx1
 #   Lidar, A2 Lidar 
-#   Motor, TRAXXAS Velinion 3500
+#   Motor, TRAXXAS Velinion 3500 (OEM on Slash)
 #   Chassis, TRAXXAS Slash 4x4
 
 # VESC Motor controller parameters
@@ -23,12 +23,13 @@ speed_to_erpm_offset: 0.0 # MOWBOT Calibration
 kv: 3500 # rpm/v, Traxxas Velinion 3500 BLDC
 
 # SERVO Steering parameters
-steering_angle_to_servo_gain: -0.7645 # MOWBOT Calibration
-steering_angle_to_servo_offset: 0.490 # MOWBOT Calibration
+k_steer_ang_to_servo_gain: -0.7645 # MOWBOT Calibration
+k_steer_ang_to_servo_offset: 0.490 # MOWBOT Calibration
 
 # MOWBOT Rover parameters
 l_wheelbase: 0.324 # m,  MOWBOT Calibration
 l_track: 0.18 # m, 
+l_minturnradphys: 1.0 #m, min possible turn radius, physical limit
 m_rover: 7.1 # kg, 
 I_inertia_z: 69.0 # m^4, 
 r_driveratio: 11.82 # unitless, overall reduction motor to wheels
