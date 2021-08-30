@@ -97,7 +97,7 @@ void teleSteerCallback(const std_msgs::Float32::ConstPtr& msg)
     k_servoDutyReqTele = msg->data;
 }
 
-void avSteerCallback(const std_msgs::Float32::ConstPtr& msg)
+void avTurnRadCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     // Callback triggered upon publication of AV steering command (turn radius desired)
     l_turnRadReqAv = msg->data;
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 
     // Subscribe to input topics (from teleop_logi, and AV controllers)
     ros::Subscriber sub_teleSteer = n.subscribe("/teleop_logi/tele_steer_req", 1000, teleSteerCallback);
-    ros::Subscriber sub_avSteer = n.subscribe("av_steer_req", 1000, avSteerCallback);
+    ros::Subscriber sub_avTurnRad = n.subscribe("av_turnrad_req", 1000, avTurnRadCallback);
     ros::Subscriber sub_humanInLoop = n.subscribe("teleop_logi/human_in_loop", 1000, humanInLoopCallback);
 
     // Publish output topics (Road wheel angle cmd, Servo duty cmd)
