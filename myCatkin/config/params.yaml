@@ -26,6 +26,56 @@ kv_motor: 3500.0 # rpm/v, Traxxas Velinion 3500 BLDC
 k_steer_ang_to_servo_gain: -0.7645 # MOWBOT Calibration
 k_steer_ang_to_servo_offset: 0.490 # MOWBOT Calibration
 
+# TELEOP Throttle axle torque lookup table
+rpm_motor_axis_telethrotmap: [  0,
+                           3000.0,
+                           6000.0,
+                           9000.0,
+                          12000.0,
+                          15000.0,
+                          18000.0,
+                          21000.0,
+                          24000.0,
+                          27000.0 ] # theoretical max rpm/s: 3500kv*12=42000rpm / 4400 rad/s - unachievable!
+                          # column axis for M_axle_lookup_...throt table 
+
+#M_axle_lookup_telethrotmap_000throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
+#M_axle_lookup_telethrotmap_003throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
+#M_axle_lookup_telethrotmap_020throt:  [0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.00 ]
+#M_axle_lookup_telethrotmap_040throt:  [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00 ]
+#M_axle_lookup_telethrotmap_060throt:  [1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 0.00 ]
+#M_axle_lookup_telethrotmap_080throt:  [1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00 ]
+#M_axle_lookup_telethrotmap_100throt:  [2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
+# NOTE: Do not need to do this^. Instead, define a vector & reshape in starting code for node.
+# A dynamicly allocated array can be used in this case, where the dimentions are given by the lookup
+# axis lengths. This allows total separation of calibration size / density & code (lookup might be
+# tricky because it populates size at compile time... not sure if params can propogate like that)
+
+pct_throt_axis_telethrotmap: [  0.0,
+                                0.03,
+                                0.2,
+                                0.4,
+                                0.6,
+                                0.8,
+                                1.0]
+                        # row axis for M_axle_lookup...throt table. Input is throttle position
+                        # between 0 and 1. A dedband (3%) is placed around 0% throttle.
+
+M_axle_lookup_telethrotmap:           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+                                       0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+                                       0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.00,
+                                       1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00,
+                                       1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 0.00,
+                                       1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00,
+                                       2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
+                        # X-Y lookup table of axle torque desired ("Pedal Map"). Column axis being RPM,
+                        # row axis being throttle position %. Used to convert throttle position when
+                        # in a tele-op mode to axle torque desired.
+                        # theoretical max motor torque: 8.3*Ia/kv=8.3*100Amps/3500kv=0.237Nm
+                        # theoretical max axle torque - no lossess: 0.237Nm*11.82driveratio=2.80Nm
+                        # TODO: access throttle % axis from parse of param name
+                        # Gripe: YAML format is akward for 2D arrays, and not supported by ros param
+
 # MOWBOT Rover parameters
 l_wheelbase: 0.324 # m,  MOWBOT Calibration
 l_track: 0.18 # m, 
