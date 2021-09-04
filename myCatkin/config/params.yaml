@@ -39,7 +39,8 @@ rpm_motor_axis_telethrotmap: [0.0,
                           27000.0 ] # theoretical max rpm/s: 3500kv*12=42000rpm / 4400 rad/s - unachievable!
                           # column axis for M_axle_lookup_...throt table 
 
-pct_throt_axis_telethrotmap: [  0.0,
+pct_throt_axis_telethrotmap: [ -0.5,
+                                0.0,
                                 0.03,
                                 0.2,
                                 0.4,
@@ -49,7 +50,8 @@ pct_throt_axis_telethrotmap: [  0.0,
                         # row axis for M_axle_lookup...throt table. Input is throttle position
                         # between 0 and 1. A dedband (3%) is placed around 0% throttle.
 
-M_axle_lookup_telethrotmap:           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+M_axle_lookup_telethrotmap:           [-0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2,
+                                       0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                                        0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                                        0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.00,
                                        0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00,
@@ -88,6 +90,7 @@ l_dist_per_rev: 0.342 # m, meters per revolution
 r_meter_per_tachtick: 0.00225 # m, meters per tach tick of drive motor
 a_motor_current_max: 20.0 # amps
 a_motor_current_min: -10.0 # amps
+k_motor_rpm_filt: 0.05 # algo: y=yprev*(1-k)+ycurr*k, basic filter
 
 # TRACKING Camera parameters, intel T265
 track_dx: 0.10 # m, motor offset from rover origin

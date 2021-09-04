@@ -7,6 +7,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
+#include <vesc_msgs/VescStateStamped.h>
 
 // Global var to be populated by params.yaml
 float r_driveratio = 0.0;
@@ -28,6 +29,7 @@ bool b_humanInLoop = false; // true if human holding dedman switch, else 0 throt
 float k_throtReqTele = 0.0; // unitless 0..1 throttle request from gamepad (teleop) mode
 int8_t enum_throtReqAvTele = 0.0; // unitless 0..1 throttle override from gamepad in AV mode 
 float erpm_motor = 0.0; // erpm of motor
+float k_motorRpmFilt = 0.0; // algo: y=yprev*(1-k)+ycurr*k, basic 1st order
 
 // Global state variables
 const float EPSILON = 0.001; // for float equality test
@@ -40,6 +42,7 @@ float M_motorTorqCmd = 0.0; // desired motor torque (actually command current)
 float i_motorCurrCmd = 0.0; // arbitrated motor current (ie: torq) commanded
 float rpm_motor_raw = 0.0; // rpm of motor
 float rpm_motor = 0.0; // rpm of motor, filtered
+float rpm_motor_prev = 0.0; // rpm of motor previous command
 float w_motor = 0.0; // rad/s of motor
 
 // Utillity functions
@@ -203,8 +206,8 @@ float getSpinLossAxlTorq(float motorRpm)
 {
     // Returns: estimated lost axle torque due to driveline friction losses (ie: proportional to RPM)
     // Uses:
-    // Global motor speed (rpm), note: this should be filtered to avoid oscilation in command
-    return motorRpm*k_spinloss;
+    // Global motor speed (rpm, not erpm), note: this is filtered to avoid oscilation in command
+    return std::abs(motorRpm)*k_spinloss;
 }
 float getMotorTorqFromAxlTorq(float axlTorqDes)
 {
@@ -249,6 +252,13 @@ void avAxleTrqReqCallback(const std_msgs::Float32::ConstPtr& msg)
     M_axleTrqReqAv = msg->data;
 } 
 
+void motorErpmCallback(const vesc_msgs::VescStateStamped::ConstPtr& msg)
+{
+    // Callback triggerd upon publication of /sensors/core message from vesc
+    rpm_motor_raw = msg->state.speed/r_driveratio;
+    rpm_motor = (1-k_motorRpmFilt)*rpm_motor + rpm_motor_raw*k_motorRpmFilt; 
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "axl_trq_arb");
@@ -269,6 +279,7 @@ int main(int argc, char **argv)
     gotParam = gotParam && n.getParam("rpm_motor_axis_telethrotmap",yaxis_PedalMap_RpmMotor);
     gotParam = gotParam && n.getParam("pct_throt_axis_telethrotmap",xaxis_PedalMap_PctThrotTele);
     gotParam = gotParam && n.getParam("M_axle_lookup_telethrotmap",table_PedalMap_1d);
+    gotParam = gotParam && n.getParam("k_motor_rpm_filt",k_motorRpmFilt);
     if (not gotParam)
         ROS_FATAL("Failed to get parameters for axl_trq_arb node - motor teli ect");
 
@@ -293,6 +304,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_avAxleTrq = n.subscribe("/av_axletrq_req",1000,avAxleTrqReqCallback);
     ros::Subscriber sub_teleAvThrot = n.subscribe("/teleop_logi/av_throt_req",1000,teleAvThrotCallback);
     ros::Subscriber sub_humanInLoop = n.subscribe("/teleop_logi/human_in_loop",1000,humanInLoopCallback);
+    ros::Subscriber sub_motorErpm = n.subscribe("/sensors/core",1000,motorErpmCallback);
     // TODO: need motor RPM (not erpm)
     // TODO: why is vesc driver node not running?
 
@@ -325,8 +337,8 @@ int main(int argc, char **argv)
                                                 yaxis_PedalMap_RpmMotor,
                                                 table_PedalMap,
                                                 k_throtReqTele,
-                                                0.0f); //Note: 0 rpm override for now...
-            M_axleTrqSpinloss = getSpinLossAxlTorq(100.0f); // 100 rpmx0.001=.1Nm axl trq test
+                                                rpm_motor); //Note: 0 rpm override for now...
+            M_axleTrqSpinloss = getSpinLossAxlTorq(rpm_motor); // 100 rpmx0.001=.1Nm axl trq test
             M_axleTrqCmd = M_axleTrqReqTele + M_axleTrqSpinloss;
             M_motorTorqCmd = getMotorTorqFromAxlTorq(M_axleTrqCmd);
             i_motorCurrCmd = getMotorCurFromMotorTorq(M_motorTorqCmd);
