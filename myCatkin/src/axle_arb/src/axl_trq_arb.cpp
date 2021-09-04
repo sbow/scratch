@@ -5,6 +5,7 @@
 #include <cmath> // for std::floor ect
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
 
 // Global var to be populated by params.yaml
@@ -17,6 +18,10 @@ int enum_AV_THROT_NC;
 int enum_AV_THROT_INC;
 int enum_AV_THROT_DEC;
 int enum_AV_THROT_MAN;
+std::vector<float> xaxis_PedalMap_PctThrotTele;
+std::vector<float> yaxis_PedalMap_RpmMotor;
+std::vector<float> table_PedalMap_1d;
+
 
 // Global raw values from input topics
 bool b_humanInLoop = false; // true if human holding dedman switch, else 0 throttle
@@ -30,8 +35,11 @@ float M_axleTrqReqTele = 0.0; // mode: tele (gamepad) steering & throttle
 float M_axleTrqReqAvTele = 0.0; // mode: AV steering, manual throttle
 float M_axleTrqReqAv = 0.0; // mode: full AV mode
 float M_axleTrqCmd = 0.0; // arbitrated axle torque commanded
+float M_axleTrqSpinloss = 0.0; // estimated current spin loss in units of axl torq
+float M_motorTorqCmd = 0.0; // desired motor torque (actually command current)
 float i_motorCurrCmd = 0.0; // arbitrated motor current (ie: torq) commanded
-float rpm_motor = 0.0; // rpm of motor
+float rpm_motor_raw = 0.0; // rpm of motor
+float rpm_motor = 0.0; // rpm of motor, filtered
 float w_motor = 0.0; // rad/s of motor
 
 // Utillity functions
@@ -51,14 +59,16 @@ bool zeroOutStateVars()
     M_axleTrqReqAvTele = 0.0;
     M_axleTrqReqAv = 0.0;
     M_axleTrqCmd = 0.0;
+    M_axleTrqSpinloss = 0.0;
+    M_motorTorqCmd = 0.0;
     i_motorCurrCmd = 0.0;
+    rpm_motor_raw = 0.0;
     rpm_motor = 0.0;
     w_motor = 0.0;
     return true;
 }
 
-template <unsigned int xSize> // populate array size in function param at compile time
-std::vector<int> getNeighborsIx(float (&axisInc)[xSize], int axisSize, float axisSearch)
+std::vector<int> getNeighborsIx(std::vector<float> axisInc, float axisSearch)
 {
     // Purpose:
     // Given monotonically increasing axis - axisInc, and axis value of interest axisSearch,
@@ -73,6 +83,7 @@ std::vector<int> getNeighborsIx(float (&axisInc)[xSize], int axisSize, float axi
     int ixTest = 0;
     float axisVal = axisInc[ixTest];
     int nNeighbor = 1; // for point in list, at least 1 neighbor, max of 2
+    int axisSize = axisInc.size();
     std::vector<int> nAndNeighborsIx = {nNeighbor,0,0};
     ixTest = 1;
 
@@ -112,9 +123,7 @@ float getRelDistToLNorm(float lVal, float rVal, float testVal)
     return relDistNormL;
 }
 
-//float floatInterp2(float xaxis[], float yaxis[], float table[][], float xval, float yval)
-template <unsigned int xSize, unsigned int ySize> // populate array size in function param at compile time
-float floatInterp2(float (&xaxis)[xSize], float (&yaxis)[ySize], float (&table)[xSize][ySize], float xval, float yval)
+float floatInterp2(std::vector<float> xaxis, std::vector<float> yaxis, std::vector<std::vector<float>> table, float xval, float yval)
 {
     // Purpose:
     // 2D lookup table
@@ -125,9 +134,6 @@ float floatInterp2(float (&xaxis)[xSize], float (&yaxis)[ySize], float (&table)[
     // determine normalized position of xval yval to neighboring axis values
     // multiply 
     // imp notes:
-    // using primitive type because tables/axis are calibrations from params.yaml &
-    // therefore resize / insert / swap ect are useless - static size / val's.
-    // However, do not assume size of axis / table - work for size 1 and up.
     //     _|y0|y1|y2|..|yn   <--yaxis
     //    x1|a1|b1|c1|..|   <-:
     //    x2|a2|b2|c2|      <---- table 
@@ -142,8 +148,8 @@ float floatInterp2(float (&xaxis)[xSize], float (&yaxis)[ySize], float (&table)[
 
     // Find indicies of axis values neighboring value of interest
     // returns: {nNeighbors 1||2, ixL, ixR}
-    std::vector<int> nAndNeigX = getNeighborsIx(xaxis, xSize, xval);
-    std::vector<int> nAndNeigY = getNeighborsIx(yaxis, ySize, yval);
+    std::vector<int> nAndNeigX = getNeighborsIx(xaxis, xval);
+    std::vector<int> nAndNeigY = getNeighborsIx(yaxis, yval);
 
     if(nAndNeigX[0] == 2 && nAndNeigY[0] ==2)
     {
@@ -193,6 +199,27 @@ float floatInterp2(float (&xaxis)[xSize], float (&yaxis)[ySize], float (&table)[
 }
 
 // Physics functions
+float getSpinLossAxlTorq(float motorRpm)
+{
+    // Returns: estimated lost axle torque due to driveline friction losses (ie: proportional to RPM)
+    // Uses:
+    // Global motor speed (rpm), note: this should be filtered to avoid oscilation in command
+    return motorRpm*k_spinloss;
+}
+float getMotorTorqFromAxlTorq(float axlTorqDes)
+{
+    // Uses:
+    // Tm = Tm,axle/driveRatio
+    return axlTorqDes/r_driveratio;
+}
+float getMotorCurFromMotorTorq(float motorTorqDes)
+{
+    // Uses:
+    // T~= 8.3*Ia/Kv 
+    float Ia = 0.0;
+    Ia = motorTorqDes*kv_motor/8.3f; // exp derivation: https://things-in-motion.blogspot.com/2018/12/how-to-estimate-torque-of-bldc-pmsm.html
+    return Ia;
+}
 
 
 // Callback functions for input ROS topic variable data
@@ -239,8 +266,27 @@ int main(int argc, char **argv)
     gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_INC",enum_AV_THROT_INC);
     gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_DEC",enum_AV_THROT_DEC);
     gotParam = gotParam && n.getParam("/teleop_logi/AV_THROT_MAN",enum_AV_THROT_MAN);
+    gotParam = gotParam && n.getParam("rpm_motor_axis_telethrotmap",yaxis_PedalMap_RpmMotor);
+    gotParam = gotParam && n.getParam("pct_throt_axis_telethrotmap",xaxis_PedalMap_PctThrotTele);
+    gotParam = gotParam && n.getParam("M_axle_lookup_telethrotmap",table_PedalMap_1d);
     if (not gotParam)
         ROS_FATAL("Failed to get parameters for axl_trq_arb node - motor teli ect");
+
+    // Reshape table_pedalMap_1d - from params.yaml - into 2D array of type std::vector<float>
+    int nRow = xaxis_PedalMap_PctThrotTele.size();
+    int nCol = yaxis_PedalMap_RpmMotor.size();
+    int ixSource = 0;
+    std::vector<float> colVals(nCol, 0);
+    std::vector<std::vector<float>> table_PedalMap(nRow,colVals);   // 2D table of axle torque, reformed from 1D params.yaml vector. 
+                                                                    // XrowLookup:Throt0..1 YrowLookup:MotorRpm
+    for (int ixR = 0; ixR < nRow; ixR++)
+    {
+        for (int ixC = 0; ixC < nCol; ixC++)
+        {
+            table_PedalMap[ixR][ixC] = table_PedalMap_1d[ixSource];
+            ixSource += 1;
+        }
+    }
 
     // Subscribe to input node topic's - teleop, av
     ros::Subscriber sub_teleThrot = n.subscribe("/teleop_logi/tele_throt_req",1000,teleThrotCallback);
@@ -251,8 +297,11 @@ int main(int argc, char **argv)
     // TODO: why is vesc driver node not running?
 
     // Publish to output topic's - motor current command to vesc, torque cmd
-    ros::Publisher pub_i_motorCurrCmd = n.advertise<std_msgs::Float32>("/axle_arb/i_motorCurrCmd", 5);
-    std_msgs::Float32 msg_i_motorCurrCmd;
+    // /commands/motor/current
+    // Type: std_msgs/Float64
+    //ros::Publisher pub_i_motorCurrCmd = n.advertise<std_msgs::Float32>("/axle_arb/i_motorCurrCmd", 5);
+    ros::Publisher pub_i_motorCurrCmd = n.advertise<std_msgs::Float64>("/commands/motor/current", 5);
+    std_msgs::Float64 msg_i_motorCurrCmd;
     ros::Publisher pub_M_axleTrqCmd = n.advertise<std_msgs::Float32>("/axle_arb/M_axleTrqCmd", 5);
     std_msgs::Float32 msg_M_axleTrqCmd;
 
@@ -271,21 +320,25 @@ int main(int argc, char **argv)
         else if(not floatIsEq(0.0, k_throtReqTele))
         {
             // tele (gamepad) axle torque joystick outputing non-default value, tele cntrl
-            M_axleTrqReqTele = 0.0; 
-            i_motorCurrCmd = 0.0; // TODO: function process M_axleTrqReqTele into motor current;
-            M_axleTrqCmd = 0.0;
+            // OR av steering & manual tele axle torque
+            M_axleTrqReqTele = floatInterp2(xaxis_PedalMap_PctThrotTele, 
+                                                yaxis_PedalMap_RpmMotor,
+                                                table_PedalMap,
+                                                k_throtReqTele,
+                                                0.0f); //Note: 0 rpm override for now...
+            M_axleTrqSpinloss = getSpinLossAxlTorq(100.0f); // 100 rpmx0.001=.1Nm axl trq test
+            M_axleTrqCmd = M_axleTrqReqTele + M_axleTrqSpinloss;
+            M_motorTorqCmd = getMotorTorqFromAxlTorq(M_axleTrqCmd);
+            i_motorCurrCmd = getMotorCurFromMotorTorq(M_motorTorqCmd);
+            M_axleTrqCmd = M_axleTrqReqTele;
         }
         else if(not floatIsEq(0.0, M_axleTrqReqAvTele))
         {
             // autonomous (av) axle torque control override to manual teleop value (gamepad)
-            i_motorCurrCmd = 0.0;
-            M_axleTrqCmd = 0.0;
-        }
-        else if(not floatIsEq(0.0, M_axleTrqReqAv))
-        {
-            // autonomous (av) axle torque control 
-            i_motorCurrCmd = 0.0;
-            M_axleTrqCmd = 0.0;
+            M_axleTrqSpinloss = getSpinLossAxlTorq(rpm_motor);
+            M_axleTrqCmd = M_axleTrqReqAvTele + M_axleTrqSpinloss;
+            M_motorTorqCmd = getMotorTorqFromAxlTorq(M_axleTrqCmd);
+            i_motorCurrCmd = getMotorCurFromMotorTorq(M_motorTorqCmd);
         }
         else
         {

@@ -7,7 +7,7 @@
 #   Tracking camera, Intel Realsense T265
 #   Compute, NVidia Jetson Tx1
 #   Lidar, A2 Lidar 
-#   Motor, TRAXXAS Velinion 3500 (OEM on Slash)
+#   Motor, TRAXXAS Velinion 3500 (OEM on Slash, 4pole, 3500 rpm/volt ie: 3500kv)
 #   Chassis, TRAXXAS Slash 4x4
 
 # VESC Motor controller parameters
@@ -17,7 +17,7 @@ vesc_driver_node:
 _min: 0.0 # VESC driver min, duty cycle 0..1
 _max: 0.5 # VESC driver max, duty cycle 0..1
 
-speed_to_erpm_gain: 4449.0 # MOWBOT Calibration
+speed_to_erpm_gain: 4449.0 # MOWBOT Calibration, erpm: rpm*number_of_poles
 speed_to_erpm_offset: 0.0 # MOWBOT Calibration
 
 kv_motor: 3500.0 # rpm/v, Traxxas Velinion 3500 BLDC
@@ -27,7 +27,7 @@ k_steer_ang_to_servo_gain: -0.7645 # MOWBOT Calibration
 k_steer_ang_to_servo_offset: 0.490 # MOWBOT Calibration
 
 # TELEOP Throttle axle torque lookup table
-rpm_motor_axis_telethrotmap: [  0,
+rpm_motor_axis_telethrotmap: [0.0,
                            3000.0,
                            6000.0,
                            9000.0,
@@ -38,18 +38,6 @@ rpm_motor_axis_telethrotmap: [  0,
                           24000.0,
                           27000.0 ] # theoretical max rpm/s: 3500kv*12=42000rpm / 4400 rad/s - unachievable!
                           # column axis for M_axle_lookup_...throt table 
-
-#M_axle_lookup_telethrotmap_000throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
-#M_axle_lookup_telethrotmap_003throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
-#M_axle_lookup_telethrotmap_020throt:  [0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.00 ]
-#M_axle_lookup_telethrotmap_040throt:  [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00 ]
-#M_axle_lookup_telethrotmap_060throt:  [1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 0.00 ]
-#M_axle_lookup_telethrotmap_080throt:  [1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00 ]
-#M_axle_lookup_telethrotmap_100throt:  [2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
-# NOTE: Do not need to do this^. Instead, define a vector & reshape in starting code for node.
-# A dynamicly allocated array can be used in this case, where the dimentions are given by the lookup
-# axis lengths. This allows total separation of calibration size / density & code (lookup might be
-# tricky because it populates size at compile time... not sure if params can propogate like that)
 
 pct_throt_axis_telethrotmap: [  0.0,
                                 0.03,
@@ -63,9 +51,9 @@ pct_throt_axis_telethrotmap: [  0.0,
 
 M_axle_lookup_telethrotmap:           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                                        0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
-                                       0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.00,
+                                       0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.00,
+                                       0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00,
                                        1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00,
-                                       1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 0.00,
                                        1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00,
                                        2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
                         # X-Y lookup table of axle torque desired ("Pedal Map"). Column axis being RPM,
@@ -75,6 +63,17 @@ M_axle_lookup_telethrotmap:           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                         # theoretical max axle torque - no lossess: 0.237Nm*11.82driveratio=2.80Nm
                         # TODO: access throttle % axis from parse of param name
                         # Gripe: YAML format is akward for 2D arrays, and not supported by ros param
+#M_axle_lookup_telethrotmap_000throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
+#M_axle_lookup_telethrotmap_003throt:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00 ]
+#M_axle_lookup_telethrotmap_020throt:  [0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.00 ]
+#M_axle_lookup_telethrotmap_040throt:  [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00 ]
+#M_axle_lookup_telethrotmap_060throt:  [1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 1.33, 0.00 ]
+#M_axle_lookup_telethrotmap_080throt:  [1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00 ]
+#M_axle_lookup_telethrotmap_100throt:  [2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
+# NOTE: Do not need to do this^. Instead, define a vector & reshape in starting code for node.
+# A dynamicly allocated array can be used in this case, where the dimentions are given by the lookup
+# axis lengths. This allows total separation of calibration size / density & code (lookup might be
+# tricky because it populates size at compile time... not sure if params can propogate like that)
 
 # MOWBOT Rover parameters
 l_wheelbase: 0.324 # m,  MOWBOT Calibration
