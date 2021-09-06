@@ -7,3 +7,6 @@
 [submodule "myCatkin/src/joystick_drivers"]
 	path = myCatkin/src/joystick_drivers
 	url = https://github.com/ros-drivers/joystick_drivers
+[submodule "myCatkin/src/ros-pwm-pca9685"]
+	path = myCatkin/src/ros-pwm-pca9685
+	url = https://github.com/dheera/ros-pwm-pca9685

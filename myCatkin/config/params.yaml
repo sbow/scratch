@@ -10,6 +10,12 @@
 #   Motor, TRAXXAS Velinion 3500 (OEM on Slash, 4pole, 3500 rpm/volt ie: 3500kv)
 #   Chassis, TRAXXAS Slash 4x4
 
+# PWM Driver - servo - pca9685
+pca9685_node:
+        device: "/dev/i2c-0"
+        address: 0x40 
+        frequency: 50
+
 # VESC Motor controller parameters
 vesc_driver_node:
   port: "/dev/ttyACM0" # Serial port of VESC, see /sys/class/tty/ttyA*

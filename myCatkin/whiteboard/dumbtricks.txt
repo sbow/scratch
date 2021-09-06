@@ -1,0 +1,20 @@
+ROS vector param at command line example:
+rostopic pub /command std_msgs/In2MultiArray -r 10 "{layout: {dim: [{label: '', size: 0, stride: 0}], data_offset: 0}, data: [3900, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}"
+
+Servo
+ROS interface
+Adafruit 16Channel PWM Driver 
+rosrun pwm_pca9685_pca9685_node
+50 hz
+/dev/i2c-0
+vcc shorted to v+
+vcc to 5v on jetson tx1
+command range
+full left
+3800
+center
+5100
+full right
+6700
+command line topic
+rostopic pub /command std_msgs/In2MultiArray -r 10 "{layout: {dim: [{label: '', size: 0, stride: 0}], data_offset: 0}, data: [5100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}"
