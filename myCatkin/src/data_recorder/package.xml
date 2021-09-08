@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>teleop</name>
+  <name>data_recorder</name>
   <version>0.0.0</version>
   <description>mowbot data recorder node</description>
 

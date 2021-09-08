@@ -205,5 +205,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(data_recorder src/data_recorder.cpp)
-target_link_libraries(data_recorder ${catkin_LIBRARIES})
+add_executable(data_recorder_node src/data_recorder_node.cpp)
+target_link_libraries(data_recorder_node ${catkin_LIBRARIES})
