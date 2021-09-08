@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sstream>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Bool.h>
 #include <vector>
 #include <cmath> // for atan(x) returning range[-pi/2, pi/2]
@@ -8,14 +9,16 @@
 #define T_LEFT 1
 #define T_RIGHT 2
 #define T_CENTER 3
+#define N_SERVO_CHAN 16
 
 // Global var from param
-int k_servo_left = 3800;
-int k_servo_center = 5100;
-int k_servo_right = 6700;
-std::vector<int> table_pwmcmd_left_servo;
-std::vector<int> table_pwmcmd_right_servo;
-std::vector<int> axis_turnrad_servo;
+int k_servo_left = 3800.0;
+int k_servo_center = 5100.0;
+int k_servo_right = 6700.0;
+int servo_channel = 0;
+std::vector<float> table_pwmcmd_left_servo;
+std::vector<float> table_pwmcmd_right_servo;
+std::vector<float> axis_turnrad_servo;
 
 // Global state vars
 bool b_teleSteerArb = false; // true if tele-op (gamepad) in control of steering
@@ -23,7 +26,7 @@ bool b_avSteerArb = false; // true if AV in control of steering
 float l_turnRadCmd = 1000;
 int k_servoDutyCmd = k_servo_center;
 const float EPSILON = 0.001; // for float equality test
-int enum_steerDir = CENTER; //
+int enum_steerDir = T_CENTER; //
 float k_servoLinScale_scaleL = 0;
 float k_servoLinScale_offstL = 0;
 float k_servoLinScale_scaleR = 0;
@@ -88,7 +91,7 @@ std::vector<int> getNeighborsIx(std::vector<float> axisInc, float axisSearch)
     return nAndNeighborsIx;
 }
 
-float floatInterp1(std::vector<int> xaxis, std::vector<int> table, float xval)
+float floatInterp1(std::vector<float> xaxis, std::vector<float> table, float xval)
 {
     // Purpose:
     // 1D lookup table
@@ -107,8 +110,8 @@ float floatInterp1(std::vector<int> xaxis, std::vector<int> table, float xval)
     //    ^xaxis
 
     float interp1Result = 0.0; // return value stored here
-    std::vector<float> xaxis_f(xaxis.begin(), xaxis.end());
-    std::vector<int> nAndNeigX = getNeighborsIx(xaxis_f, xval);
+    // std::vector<float> xaxis_f(xaxis.begin(), xaxis.end());
+    std::vector<int> nAndNeigX = getNeighborsIx(xaxis, xval);
 
     if (nAndNeigX[0] == 2)
     {
@@ -168,20 +171,25 @@ float floatInterp1(std::vector<int> xaxis, std::vector<int> table, float xval)
 //     return radiansDesireArbRwa;
 //  }
 
-int servoCmdFromLinScale(float k_inputNorm)
+float servoCmdFromLinScale(float k_inputNorm)
 {
     // Function:
     // In teleop (gamepad) operation, throttle position is range -1..1
     // This function makes use of exeperimentally derived servo pwm command
     // corresponding to full left, full right, center & scales the range linearly.
 
-    int servoCmd = k_inputNorm;
+    float servoCmd = k_inputNorm;
     if (k_inputNorm > 0) // if LEFT
         servoCmd = k_servoLinScale_scaleL*k_inputNorm + k_servoLinScale_offstL;
     else if (k_inputNorm < 0) // if RIGHT, defined by joy node output / tele node
         servoCmd = k_servoLinScale_scaleR*k_inputNorm + k_servoLinScale_offstR;
     else
         servoCmd = k_servo_center;
+    ROS_INFO("k_inputNorm: %f", k_inputNorm);
+    ROS_INFO("k_servoLinScaleL: %f", k_servoLinScale_scaleL);
+    ROS_INFO("k_servoLinScaleOffL: %f", k_servoLinScale_offstL);
+    ROS_INFO("servoCmd: %f", servoCmd); 
+    return servoCmd;
 }
 
 void teleSteerCallback(const std_msgs::Float32::ConstPtr& msg)
@@ -195,11 +203,11 @@ void avTurnRadCallback(const std_msgs::Float32::ConstPtr& msg)
     // Callback triggered upon publication of AV steering command (turn radius desired)
     l_turnRadReqAv = msg->data;
     if (l_turnRadReqAv > 0)
-        enum_steerDir = LEFT;
+        enum_steerDir = T_LEFT;
     else if (l_turnRadReqAv < 0)
-        enum_steerDir = RIGHT;
+        enum_steerDir = T_RIGHT;
     else
-        enum_steerDir = CENTER;
+        enum_steerDir = T_CENTER;
 }
 
 void humanInLoopCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -217,17 +225,13 @@ int main(int argc, char **argv)
 
     // Read in parameters to global var's
     bool gotParam = true;
-    gotParam = gotParam && n.getParam("l_wheelbase", l_wheelbase);
-    gotParam = gotParam && n.getParam("l_track", l_track);
-    gotParam = gotParam && n.getParam("l_minturnradphys", l_minturnradphys);
-    gotParam = gotParam && n.getParam("k_steer_ang_to_servo_gain", k_steer_ang_to_servo_gain);
-    gotParam = gotParam && n.getParam("k_steer_ang_to_servo_offset", k_steer_ang_to_servo_offset);
     gotParam = gotParam && n.getParam("servo_left", k_servo_left);
     gotParam = gotParam && n.getParam("servo_center", k_servo_center);
     gotParam = gotParam && n.getParam("servo_right", k_servo_right);
     gotParam = gotParam && n.getParam("k_pwmcmd_left_table_servo", table_pwmcmd_left_servo);
     gotParam = gotParam && n.getParam("k_pwmcmd_right_table_servo", table_pwmcmd_right_servo);
     gotParam = gotParam && n.getParam("m_turnrad_axis_servo", axis_turnrad_servo);
+    gotParam = gotParam && n.getParam("servo_channel", servo_channel);
     if (not gotParam)
         ROS_FATAL("Failed to load l_wheelbase / track / min turn rad / servo parameters");
 
@@ -237,8 +241,14 @@ int main(int argc, char **argv)
     ros::Subscriber sub_humanInLoop = n.subscribe("teleop_logi/human_in_loop", 1000, humanInLoopCallback);
 
     // Publish output topics (Servo duty cmd)
-    ros::Publisher pub_rwaRadiansCmd = n.advertise<std_msgs::Float32>("/turn_arb/rwaRadiansCmd",5);
-    std_msgs::Float32 rwaRadiansCmd;
+    // servo command vector topic - subscribed by pca9685 node - 16 element int array correspond to pwm duty
+    ros::Publisher pub_servoCmdVector = n.advertise<std_msgs::Int32MultiArray>("/servo/cmdVector",5);
+    std_msgs::Int32MultiArray msg_servoCmdVector;
+    msg_servoCmdVector.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    std::vector<int> servoCmdVectorData(N_SERVO_CHAN, -1);
+    msg_servoCmdVector.layout.dim[0].size = servoCmdVectorData.size();
+    msg_servoCmdVector.layout.dim[0].stride = 1;
+    msg_servoCmdVector.layout.dim[0].label = "pwm_channel";
 
     // Announce node is running
     ROS_INFO("turn_rad_arb node - RUNNING");
@@ -249,6 +259,7 @@ int main(int argc, char **argv)
     k_servoLinScale_scaleL = k_servo_left-k_servo_center; // neg scale, pos depend var
     k_servoLinScale_offstR = k_servo_center; // "safe" for 0 input
     k_servoLinScale_scaleR = k_servo_center-k_servo_right; // neg scale, neg depend var
+
 
     while (ros::ok())
     {
@@ -261,7 +272,8 @@ int main(int argc, char **argv)
         else if(not floatIsEq(0.5, k_servoDutyReqTele))
         {
             // tele (gamepad) steer joystick outputing non-default value, tele cntrl
-            k_servoDutyCmd = servoCmdFromLinScale(k_servoDutyReqTele);
+            k_servoDutyCmd = (int)std::round(servoCmdFromLinScale(k_servoDutyReqTele));
+        }
         else if(not floatIsEq(0.0, l_turnRadReqAv))
         {
             // autonomous (av) steer control topic outputting real turn radius req
@@ -281,14 +293,18 @@ int main(int argc, char **argv)
             // catch-all, output defaults
             k_servoDutyCmd = k_servo_center;
         }
-        // TODO:
-        // - need to build out 16 channel array
-        // - need to build out proper ROS message for pca9685 node subscriber
-        servoDutyCmd.data = k_servoDutyCmd; // arbitrated servo duty command
+        // Build servo command message - 16 element int vector corresponding to pwm channel
+        msg_servoCmdVector.data.clear();
+        msg_servoCmdVector.data.insert( msg_servoCmdVector.data.end(), 
+                                        servoCmdVectorData.begin(),
+                                        servoCmdVectorData.end());
+        k_servoDutyCmd = std::round(k_servoDutyCmd); // round arbitrated command for max accuracy
+        msg_servoCmdVector.data[servo_channel] = (int)k_servoDutyCmd; // populate steering servo channel
 
         // Publish output nodes:
-        pub_rwaRadiansCmd.publish(rwaRadiansCmd);
+        pub_servoCmdVector.publish(msg_servoCmdVector);
 
+        // loop
         ros::spinOnce();
         loop_rate.sleep();
     }
