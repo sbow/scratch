@@ -88,15 +88,6 @@ std::vector<int> getNeighborsIx(std::vector<float> axisInc, float axisSearch)
     return nAndNeighborsIx;
 }
 
-float getRelDistToLNorm(float lVal, float rVal, float testVal)
-{
-    // Purpose:
-    // Return relative distance of testVal to lVal and rVal, normalized to 0..1
-    // NOTE: Unused
-    float relDistNormL = (testVal - lVal)/(rVal - lVal);
-    return relDistNormL;
-}
-
 float floatInterp1(std::vector<int> xaxis, std::vector<int> table, float xval)
 {
     // Purpose:
@@ -203,9 +194,9 @@ void avTurnRadCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     // Callback triggered upon publication of AV steering command (turn radius desired)
     l_turnRadReqAv = msg->data;
-    if (l_turnRadReqAv < 0)
+    if (l_turnRadReqAv > 0)
         enum_steerDir = LEFT;
-    else if (l_turnRadReqAv > 0)
+    else if (l_turnRadReqAv < 0)
         enum_steerDir = RIGHT;
     else
         enum_steerDir = CENTER;
@@ -245,7 +236,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_avTurnRad = n.subscribe("av_turnrad_req", 1000, avTurnRadCallback);
     ros::Subscriber sub_humanInLoop = n.subscribe("teleop_logi/human_in_loop", 1000, humanInLoopCallback);
 
-    // Publish output topics (Road wheel angle cmd, Servo duty cmd)
+    // Publish output topics (Servo duty cmd)
     ros::Publisher pub_rwaRadiansCmd = n.advertise<std_msgs::Float32>("/turn_arb/rwaRadiansCmd",5);
     std_msgs::Float32 rwaRadiansCmd;
 
