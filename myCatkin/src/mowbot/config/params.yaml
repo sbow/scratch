@@ -16,6 +16,10 @@ pca9685_node:
         device: "/dev/i2c-0"
         address: 0x40 # 64 int, 0x40 hex
         frequency: 50 # for servo's, for LED's should b much higher
+        timeout_value: [5100, 5100, 5100, 5100, 5100, 5100, 5100, 5100
+                        5100, 5100, 5100, 5100, 5100, 5100, 5100, 5100]  # value after timeout occurs
+        timeout: [50000, 50000, 50000, 50000, 50000, 50000, 50000, 50000,
+                  50000, 50000, 50000, 50000, 50000, 50000, 50000, 50000] # after n mili's since last new cmd, set timeout
 servo_left: 3800.0 # experimentally derived, traxxas slash 4x4 stock servo
 servo_center: 5100.0 # experimentally derived, traxxas slash 4x4 stock servo
 servo_right: 6700.0 # experimentally derived, traxxas slash 4x4 stock servo
@@ -107,13 +111,13 @@ pct_throt_axis_telethrotmap: [ -0.5,
                         # row axis for M_axle_lookup...throt table. Input is throttle position
                         # between 0 and 1. A dedband (3%) is placed around 0% throttle.
 
-M_axle_lookup_telethrotmap:           [-0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2,
+M_axle_lookup_telethrotmap:           [-0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4,
                                        0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                                        0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
                                        0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.00,
                                        0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00,
-                                       1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.00,
-                                       1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 1.67, 0.00,
+                                       0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.00,
+                                       1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 0.00,
                                        2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
                         # X-Y lookup table of axle torque desired ("Pedal Map"). Column axis being RPM,
                         # row axis being throttle position %. Used to convert throttle position when

@@ -7,7 +7,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
-#include <vesc_msgs/VescStateStamped.h>
+#include "vesc_msgs/VescStateStamped.h"
 
 // Global var to be populated by params.yaml
 float r_driveratio = 0.0;

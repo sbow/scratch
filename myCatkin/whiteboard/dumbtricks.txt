@@ -18,3 +18,12 @@ full right
 6700
 command line topic
 rostopic pub /command std_msgs/In2MultiArray -r 10 "{layout: {dim: [{label: '', size: 0, stride: 0}], data_offset: 0}, data: [5100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}"
+
+
+How to permemently give i2c devices +RW permissions:
+Make rule in udev:
+make file ie "99-mowbot.rules" in /etc/udev/rules.d
+ACTION=="add", KERNEL=="i2c-[0-1]*", MODE="0666"
+
+How to properly execute roslaunch on boot, ie: headless
+https://blog.roverrobotics.com/how-to-run-ros-on-startup-bootup/

@@ -1,0 +1,10 @@
+<launch>
+<rosparam command="load" file="$(find mowbot)/config/params.yaml" />
+<node pkg="joy" name="joystick" type="joy_node" />
+<node pkg="teleop" name="telop" type="teleop_logi" />
+<node pkg="axle_arb" name="axle_arb" type="axl_trq_arb" />
+<node pkg="turn_arb" name="turn_arb" type="turn_rad_arb" />
+<node pkg="pwm_pca9685" name="pca9685_node" type="pca9685_node" />
+<node pkg="poseTxT265" name="poseTxT265" type="poseTx" />
+<node pkg="vesc_driver" name="vesc_driver_node" type="vesc_driver_node"/>
+</launch>
