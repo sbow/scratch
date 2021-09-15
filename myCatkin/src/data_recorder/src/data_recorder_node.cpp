@@ -8,7 +8,21 @@ Purpose:
 */
 
 #include <ros/ros.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
+
+// Gloabls from input topics
+bool rosbagReq = false;
+
+// Global state vars
+bool newMsg = false;
+bool isRecording = false;
+
+void rosbagCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    rosbagReq = msg->data;
+    newMsg = true;
+}
 
 int main(int argc, char **argv)
 {
@@ -16,26 +30,35 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::Rate loop_rate(2);
 
-    // Read in parameters to global var's
-    bool gotParam = true;
-    //gotParam = gotParam && n.getParam("servo_right", k_servo_right);
-    if (not gotParam)
-        ROS_FATAL("Failed to load l_wheelbase / track / min turn rad / servo parameters");
-
     // Subscribe to input topics (from teleop_logi, and AV controllers)
-    //ros::Subscriber sub_teleSteer = n.subscribe("/teleop_logi/tele_steer_req", 1000, teleSteerCallback);
+    ros::Subscriber sub_rosbag = n.subscribe("/teleop_logi/rosbag_req", 1000, rosbagCallback);
 
     // Publish output topics (Road wheel angle cmd, Servo duty cmd)
-    // ros::Publisher pub_rwaRadiansCmd = n.advertise<std_msgs::Float32>("/turn_arb/rwaRadiansCmd",5);
-    // std_msgs::Float32 rwaRadiansCmd;
+    ros::Publisher pub_recordStart = n.advertise<std_msgs::Bool>("/record/start", 5);
+    ros::Publisher pub_recordStop = n.advertise<std_msgs::Bool>("/record/stop", 5);
+    std_msgs::Bool msgSend;
+    msgSend.data = true;
 
     // Announce node is running
     ROS_INFO("data_recorder node - RUNNING");
 
-    // Debug:
-
     while (ros::ok())
     {
+        if (newMsg)
+        {
+            // new msg flag indicates new rosbag request
+            if (rosbagReq && not isRecording)
+            {
+                pub_recordStart.publish(msgSend);
+                isRecording = true;
+            }
+            else if(isRecording && not rosbagReq)
+            {
+                pub_recordStop.publish(msgSend);
+                isRecording = false;
+            }
+            newMsg = false; // for debounc
+        }
         ros::spinOnce();
         loop_rate.sleep();
     }

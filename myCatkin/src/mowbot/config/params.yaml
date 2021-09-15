@@ -10,6 +10,14 @@
 #   Motor, TRAXXAS Velinion 3500 (OEM on Slash, 4pole, 3500 rpm/volt ie: 3500kv)
 #   Chassis, TRAXXAS Slash 4x4
 
+# Data recorder parameters
+prog_record:
+  start_topic: "/record/start"
+  stop_topic: "/record/stop"
+  file_prefix: "MowbotBag_"
+  data_directory: "/home/shaun/Desktop"
+  topic_name_file: "/home/shaun/Git/scratch/myCatkin/src/mowbot/config/rosbagtopics.config"
+
 # Steering Servo Parameters
 # PWM Driver - servo - pca9685
 pca9685_node:

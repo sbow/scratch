@@ -306,7 +306,7 @@ public:
     ros::NodeHandle nh_param("~");
     pub_ = nh_.advertise<sensor_msgs::Joy>("joy", 1);
     ros::Subscriber sub = nh_.subscribe("joy/set_feedback", 10, &Joystick::set_feedback, this);
-    nh_param.param<std::string>("dev", joy_dev_, "/dev/input/js0");
+    nh_param.param<std::string>("dev", joy_dev_, "/dev/input/js1");
     nh_param.param<std::string>("dev_ff", joy_dev_ff_, "/dev/input/event0");
     nh_param.param<std::string>("dev_name", joy_dev_name_, "");
     nh_param.param<double>("deadzone", deadzone_, 0.05);

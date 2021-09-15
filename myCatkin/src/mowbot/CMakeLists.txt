@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   teleop
   turn_arb
   vesc_driver
+  prog_rosbag
 )
 
 ## System dependencies are found with CMake's conventions
@@ -129,7 +130,6 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  src/thirdparty
 )
 
 ## Declare a C++ library
