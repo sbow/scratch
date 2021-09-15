@@ -16,7 +16,7 @@ prog_record:
   stop_topic: "/record/stop"
   file_prefix: "MowbotBag_"
   data_directory: "/home/shaun/Desktop"
-  topic_name_file: "/home/shaun/Git/scratch/myCatkin/src/mowbot/config/rosbagtopics.config"
+  topic_name_file: "/home/shaun/git/scratch/myCatkin/src/mowbot/config/rosbagtopics.config"
 
 # Steering Servo Parameters
 # PWM Driver - servo - pca9685

@@ -3,7 +3,7 @@
 <node pkg="joy" name="joystick" type="joy_node" />
 <node pkg="teleop" name="telop" type="teleop_logi" />
 <node pkg="data_recorder" name="record" type="data_recorder_node" />
-<node pkg="prog_record" name="prog_rec" type="prog_record" />
+<node pkg="prog_rosbag" name="prog_rec" type="prog_record" />
 <node pkg="axle_arb" name="axle_arb" type="axl_trq_arb" />
 <node pkg="turn_arb" name="turn_arb" type="turn_rad_arb" />
 <node pkg="pwm_pca9685" name="pca9685_node" type="pca9685_node" />
