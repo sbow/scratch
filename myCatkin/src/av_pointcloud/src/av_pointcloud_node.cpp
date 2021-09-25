@@ -33,8 +33,14 @@ Idea's to try and generate drive path:
 */
 
 #include <ros/ros.h>
+#include <geometry_msgs/Pose.h>
 #include <sstream>
 #include <cmath>
+
+void poset265Callback(const geometry_msgs::Pose::ConstPtr& msg)
+{
+    // do nothing
+}
 
 int main(int argc, char **argv)
 {

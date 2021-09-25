@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>av_pointcloud_node</name>
+  <name>av_pointcloud</name>
   <version>0.0.0</version>
   <description>mowbot av_pointcloud node</description>
 

@@ -108,7 +108,7 @@ rpm_motor_axis_telethrotmap: [0.0,
                           27000.0 ] # theoretical max rpm/s: 3500kv*12=42000rpm / 4400 rad/s - unachievable!
                           # column axis for M_axle_lookup_...throt table 
 
-pct_throt_axis_telethrotmap: [ -0.5,
+pct_throt_axis_telethrotmap: [ -0.9,
                                 0.0,
                                 0.03,
                                 0.2,
@@ -119,14 +119,14 @@ pct_throt_axis_telethrotmap: [ -0.5,
                         # row axis for M_axle_lookup...throt table. Input is throttle position
                         # between 0 and 1. A dedband (3%) is placed around 0% throttle.
 
-M_axle_lookup_telethrotmap:           [-0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4, -0.4,
+M_axle_lookup_telethrotmap:           [-0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7,
                                        0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
-                                       0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
-                                       0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.00,
-                                       0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00,
-                                       0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.00,
-                                       1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 0.00,
-                                       2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 0.00 ]
+                                       0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00,
+                                       0.80, 0.40, 0.40, 0.40, 0.40, 0.40, 0.40, 0.40, 0.40, 0.00,
+                                       1.10, 0.70, 0.70, 0.70, 0.70, 0.70, 0.70, 0.70, 0.70, 0.00,
+                                       1.300, 0.900, 0.900, 0.900, 0.900, 0.900, 0.900, 0.900, 0.900, 0.00,
+                                       1.7, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 0.00,
+                                       2.50, 2.50, 2.50, 2.50, 2.50, 2.50, 2.50, 2.50, 2.50, 0.00 ]
                         # X-Y lookup table of axle torque desired ("Pedal Map"). Column axis being RPM,
                         # row axis being throttle position %. Used to convert throttle position when
                         # in a tele-op mode to axle torque desired.

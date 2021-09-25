@@ -22,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
   teleop
   turn_arb
   vesc_driver
-  prog_rosbag
 )
 
 ## System dependencies are found with CMake's conventions
