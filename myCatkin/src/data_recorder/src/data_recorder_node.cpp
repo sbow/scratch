@@ -18,8 +18,16 @@ bool rosbagReq = false;
 bool newMsg = false;
 bool isRecording = false;
 
+// void motorCallback(const std_msgs::Float32::ConstPtr& msg)
+// {
+//     // Callback triggered from vesc defining motor state.
+//     // Message is broken out into individual messages for easy
+//     // post-processing in python / whatever of bag
+// }
+
 void rosbagCallback(const std_msgs::Bool::ConstPtr& msg)
 {
+    // ** important: receives request to start / stop recording from joystick
     rosbagReq = msg->data;
     newMsg = true;
 }
